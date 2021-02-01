@@ -15,6 +15,9 @@
 # production
 /build
 
+# other
+/_OLD
+
 # misc
 .DS_Store
 *.pem
