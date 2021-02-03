@@ -49,6 +49,11 @@ const updateHost = (roomIndex: number, username: string): void => {
   rooms[roomIndex].host = username
 }
 
+const setVideo = (roomId: string, video: string) => {
+  const roomIndex = rooms.findIndex(room => room.id === roomId)
+  rooms[roomIndex].video = video
+}
+
 const getRoom = (roomId: string): RoomData => {
   return rooms.find(room => room.id === roomId)!
 }
@@ -62,7 +67,9 @@ const checkRoomExists = (roomId: string): boolean => {
   }
 }
 
-// Retrieve a user
+// Retrieve a user    
+// TODO: Fix exclamations where I can? Maybe set room.find to a var, and put if (!== null)
+// I think exclamations are find, but they feel like i should avoid them if i can... ask in discord?
 const getUser = (roomId: string, userId: string): User => {
   return rooms.find(room => room.id === roomId)!.users.find(user => user.id === userId)!
 }
@@ -72,4 +79,4 @@ const getUsersInRoom = (roomId: string) => {
   return rooms.find(room => room.id === roomId)!.users
 }
 
-export { addRoom, addUser, removeUser, getRoom, getUser, getUsersInRoom, checkRoomExists }
+export { addRoom, addUser, removeUser, getRoom, getUser, getUsersInRoom, checkRoomExists, setVideo }

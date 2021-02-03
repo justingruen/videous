@@ -4,8 +4,10 @@ export enum SocketEvent {
   JOIN = 'join',
   LEAVE = 'leave',
   STCROOMDATA = 'stcroomdata',
-  CTSMessage = 'ctsmessage',
-  STCMessage = 'stcmessage'
+  CTSMESSAGE = 'ctsmessage',
+  STCMESSAGE = 'stcmessage',
+  CTSVIDEO = 'ctsvideo',
+  STCVIDEO = 'stcvideo'
 }
 
 // stc = server to client

@@ -20,7 +20,7 @@ function Chatbox(props) {
 
   useEffect(() => {
     // receives incoming messages
-    socket.on(SocketEvent.STCMessage, (chatMessage: Message) => {
+    socket.on(SocketEvent.STCMESSAGE, (chatMessage: Message) => {
       setmessages(messages => [...messages, chatMessage])
     })
   }, [])
@@ -34,7 +34,7 @@ function Chatbox(props) {
     e.preventDefault()
 
     if(message) {
-      socket.emit(SocketEvent.CTSMessage, { chatMessage: {id: uuid(), author: username, message: message}, room: users[0].room }, () => setmessage(''))
+      socket.emit(SocketEvent.CTSMESSAGE, { chatMessage: {id: uuid(), author: username, message: message}, room: users[0].room }, () => setmessage(''))
     }
   }
 

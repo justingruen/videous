@@ -5,6 +5,7 @@ import Head from 'next/head'
 import { User, RoomData } from '../types/types'
 import PORT from '../constants/port'
 import Chatbox from '../components/chat/chatbox'
+import Player from '../components/player/player'
 
 import { SocketContext } from '../constants/socket'
 
@@ -18,6 +19,7 @@ function Room() {
   const [user, setUser] = useState<User>(null)
   const socket = useContext<Socket>(SocketContext)
   const [roomData, setroomData] = useState<RoomData>(null)
+  const [isHost, setisHost] = useState<boolean>(false)
 
   function LeaveEvent() {
     {username && room &&  // TODO: test adding var, and fixing leaveevent showing twice
@@ -32,6 +34,7 @@ function Room() {
     {username && room &&
       socket.emit(SocketEvent.JOIN, { username, room }, (successMsg: string, user: User, data: RoomData) => {
         setUser(user)
+        setisHost(data.host === user.username)
         setroomData(data)
         console.log(successMsg)
       })
@@ -71,13 +74,18 @@ function Room() {
         </div>
         <hr />
         <div id='content'>
-          <p>Room: {room}</p>
-          <p>Username: {username}</p>
+          <div id='top'>
+            <p>Room: {room}</p>
+            <p>Username: {username}</p>
+          </div>
+          {roomData   // TODO: better to pass socket as a prop or call context again in child?
+            ? <div id='bottom'>
+                <Player ogVideo={roomData.video} room={roomData.id} isHost={isHost} socket={socket}/>
+                <Chatbox host={roomData.host} users={roomData.users} username={user.username} socket={socket}/>
+              </div>
+            : null
+          }
         </div>
-        {roomData   // TODO: better to pass socket as a prop or call context again in child?
-          ? <Chatbox host={roomData.host} users={roomData.users} username={user.username} socket={socket}/>
-          : null
-        }
       </main>
     </div>
   )

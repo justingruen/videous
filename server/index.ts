@@ -11,7 +11,8 @@ import {
   removeUser,
   getUser,
   getUsersInRoom, 
-  checkRoomExists
+  checkRoomExists,
+  setVideo,
 } from './rooms'
 import { 
   RoomData,
@@ -63,15 +64,22 @@ const nextHandler = nextApp.getRequestHandler();
         const roomData: RoomData = getRoom(room)
         socket.to(user.room).emit(SocketEvent.STCROOMDATA, roomData)
 
-        // const chatMessage: Message = {id: uuid(), author: 'Admin', message: `${user.username} has joined`}
-        socket.to(room).emit(SocketEvent.STCMessage, {id: uuid(), author: 'Admin', message: `${user.username} has joined`})
+        socket.to(room).emit(SocketEvent.STCMESSAGE, {id: uuid(), author: 'Admin', message: `${user.username} has joined`})
 
         callback('Join success!', user, roomData) 
       })
 
       // when a user sends a message
-      socket.on(SocketEvent.CTSMessage, ({chatMessage, room}: {chatMessage: Message, room: string}, callback) => {
-        io.to(room).emit(SocketEvent.STCMessage, chatMessage)
+      socket.on(SocketEvent.CTSMESSAGE, ({chatMessage, room}: {chatMessage: Message, room: string}, callback) => {
+        io.to(room).emit(SocketEvent.STCMESSAGE, chatMessage)
+
+        callback()
+      })
+
+      // when the host sets a new video
+      socket.on(SocketEvent.CTSVIDEO, ({videoInput, room}: {videoInput: string, room: string}, callback) => {
+        setVideo(room, videoInput)
+        io.to(room).emit(SocketEvent.STCVIDEO, videoInput)
 
         callback()
       })
@@ -84,6 +92,8 @@ const nextHandler = nextApp.getRequestHandler();
 
         const roomData: RoomData = getRoom(room)
         socket.to(user.room).emit(SocketEvent.STCROOMDATA, roomData)
+
+        socket.to(room).emit(SocketEvent.STCMESSAGE, {id: uuid(), author: 'Admin', message: `${user.username} has left`})
         
         if (user) {
 

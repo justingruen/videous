@@ -10,6 +10,7 @@ export interface RoomData {
   host: string;
   users: Array<User>;
   video: string | null;
+  
 }
 
 export interface Message {
