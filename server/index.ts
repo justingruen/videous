@@ -4,14 +4,19 @@ import { Server, Socket } from 'socket.io'
 import PORT from '../constants/port'
 import { SocketEvent } from '../types/enums'
 import { createServer } from 'http'
-import { 
-  addUser, 
+import {
+  getRoom,
+  addRoom,
+  addUser,
   removeUser,
   getUser,
   getUsersInRoom, 
-} from './users'
+  checkRoomExists
+} from './rooms'
 import { 
+  RoomData,
   User, 
+  Message,
 } from '../types/types'
 import uuid from 'uuid-random'
 
@@ -19,6 +24,8 @@ const dev = process.env.NODE_ENV !== 'production'
 
 const nextApp = next({ dev })
 const nextHandler = nextApp.getRequestHandler();
+
+// TODO: Set up error handling for socket event if it returns a 404?
 
 (async () => {
   try {
@@ -37,25 +44,46 @@ const nextHandler = nextApp.getRequestHandler();
     io.on("connection", (socket: Socket) => {
       console.log(`Socket with ID of ${socket.id} has joined!`)
 
-      // when a new socket connects to a room
+      // when a socket joins a room
       socket.on(SocketEvent.JOIN, ({username, room}: {username: string, room: string}, callback) => {
         console.log(`User ${username} connected to room ${room}`)
 
-        let usersInRoomCount = getUsersInRoom(room).length
+        // if get room returns null
+        if (!checkRoomExists(room)) {
+          addRoom(room, username, [], null)
+        }
 
-        let { user } = addUser({ id: socket.id, username: username, room: room, userNumber: usersInRoomCount+1 })
+        let usersInRoomCount = getRoom(room)!.users.length
 
-        socket.join(user.room)
+        addUser({ id: socket.id, username: username, room: room, userNumber: usersInRoomCount+1 })
+        const user: User = { id: socket.id, username: username, room: room, userNumber: usersInRoomCount+1 }
 
-        console.log(user)
+        socket.join(room)
 
-        callback('Join success!', user) 
+        const roomData: RoomData = getRoom(room)
+        socket.to(user.room).emit(SocketEvent.STCROOMDATA, roomData)
+
+        // const chatMessage: Message = {id: uuid(), author: 'Admin', message: `${user.username} has joined`}
+        socket.to(room).emit(SocketEvent.STCMessage, {id: uuid(), author: 'Admin', message: `${user.username} has joined`})
+
+        callback('Join success!', user, roomData) 
       })
 
-      // when a socket disconnects
+      // when a user sends a message
+      socket.on(SocketEvent.CTSMessage, ({chatMessage, room}: {chatMessage: Message, room: string}, callback) => {
+        io.to(room).emit(SocketEvent.STCMessage, chatMessage)
+
+        callback()
+      })
+
+      // when a socket leaves a room
       socket.on(SocketEvent.LEAVE, ({username, room}: {username: string, room: string}, callback) => {
         console.log(`User ${username} has left room ${room}!`)
-        const user = removeUser(socket.id)
+        const user = getUser(room, socket.id)
+        removeUser(user.room, socket.id)
+
+        const roomData: RoomData = getRoom(room)
+        socket.to(user.room).emit(SocketEvent.STCROOMDATA, roomData)
         
         if (user) {
 

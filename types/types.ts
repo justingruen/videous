@@ -5,9 +5,15 @@ export interface User {
   userNumber: number;
 }
 
-export interface Room {
+export interface RoomData {
   id: string;
   host: string;
-  video: string;
   users: Array<User>;
+  video: string | null;
+}
+
+export interface Message {
+  id: string;
+  author: string;
+  message: string;
 }

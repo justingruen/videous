@@ -2,36 +2,42 @@ import { useEffect, useState, useContext } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import Head from 'next/head'
-import { User } from '../types/types'
+import { User, RoomData } from '../types/types'
 import PORT from '../constants/port'
+import Chatbox from '../components/chat/chatbox'
 
 import { SocketContext } from '../constants/socket'
 
 import { SocketEvent } from '../types/enums'
+import { Socket } from 'socket.io-client'
 
 
-export default function Room() {
+function Room() {
   const router = useRouter()
   const { username, room } = router.query
   const [user, setUser] = useState<User>(null)
-  const socket = useContext(SocketContext)
+  const socket = useContext<Socket>(SocketContext)
+  const [roomData, setroomData] = useState<RoomData>(null)
+
+  function LeaveEvent() {
+    {username && room &&  // TODO: test adding var, and fixing leaveevent showing twice
+      socket.emit(SocketEvent.LEAVE, { username, room }, (successMsg: string) => {
+        console.log(successMsg)
+      })
+    }
+  }
 
   // socket io joining and leaving room
   useEffect(() => {
     {username && room &&
-      socket.emit(SocketEvent.JOIN, { username, room }, (successMsg: string, user: User) => {
+      socket.emit(SocketEvent.JOIN, { username, room }, (successMsg: string, user: User, data: RoomData) => {
         setUser(user)
+        setroomData(data)
         console.log(successMsg)
       })
     }
 
-    window.addEventListener('beforeunload', () => {
-      {username && room &&
-        socket.emit(SocketEvent.LEAVE, { username, room }, (successMsg: string) => {
-          console.log(successMsg)
-        })
-      }
-    })
+    window.addEventListener('beforeunload', LeaveEvent)
 
     return () => {
       {username && room &&
@@ -39,13 +45,17 @@ export default function Room() {
           console.log(successMsg)
         })
       }
+      window.removeEventListener('beforeunload', LeaveEvent)
     }
-
-    // return function cleanupListener() {
-    //   window.removeEventListener('resize', handleResize)
-    // }
     
   }, [router.query])
+
+  // socketio listeners
+  useEffect(() => {
+    socket.on(SocketEvent.STCROOMDATA, (roomData: RoomData) => {
+      setroomData(roomData)
+    })
+  })
 
   return (
     <div>
@@ -64,10 +74,16 @@ export default function Room() {
           <p>Room: {room}</p>
           <p>Username: {username}</p>
         </div>
+        {roomData   // TODO: better to pass socket as a prop or call context again in child?
+          ? <Chatbox host={roomData.host} users={roomData.users} username={user.username} socket={socket}/>
+          : null
+        }
       </main>
     </div>
   )
 }
+
+export default Room
 
 // 1. client joins
 // 2. server sends back a cookie with sessionID
